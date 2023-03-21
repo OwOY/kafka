@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    restart: always
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_CLIENT_PORT: 2181
+      TZ: Asia/Taipei
+    networks:
+      - kafka_net
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    volumes: 
+        - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    ports:
+      - 9092:9092
+      - 9093:9093
+    environment:
+      KAFKA_BROKER_ID: 0
+      KAFKA_ZOOKEEPER_CONNECT: 20.205.103.48:2181,20.205.24.41:2181,20.187.126.100:2181
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://20.205.24.41:9092"
+      KAFKA_SASL_ENABLED: "false"
+      KAFKA_JMX_HOST: 20.205.24.41
+      KAFKA_JMX_PORT: 9093
+      # KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf"
+      # KAFKA_JMX_OPTS: "-Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.authenticate=false  -Dcom.sun.management.jmxremote.ssl=false"
+      TZ: Asia/Taipei
+    volumes:
+      - /home/asd1234op/kafka_test/secrets:/etc/kafka/secrets
+    networks:
+      - kafka_net
+
+
+networks:
+  kafka_net:
+    driver: bridge

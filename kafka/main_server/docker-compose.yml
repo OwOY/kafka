@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb
+    container_name: eagle_db
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+    restart: always
+    networks:
+      - eagle
+  eagle:
+    image: nickzurich/efak
+    container_name: eagle
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8048:8048
+    environment:
+      EFAK_CLUSTER_ZK_LIST: 34.80.165.184:2181,104.155.197.126:2181,35.189.176.161:2181
+      EFAK_DB_DRIVER: com.mysql.jdbc.Driver
+      EFAK_DB_URL: jdbc:mysql://db:3306/ke?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
+      EFAK_DB_PASSWORD: test
+      TZ: Asia/Taipei
+    networks:
+      - eagle
+
+networks:
+  eagle:
+    driver: bridge
