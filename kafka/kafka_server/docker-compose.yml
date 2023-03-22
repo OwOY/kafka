@@ -11,8 +11,13 @@ services:
       ALLOW_ANONYMOUS_LOGIN: "yes"
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_CLIENT_PORT: 2181
-      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
+      ZOOKEEPER_SASL_ENABLED: "true"
+      KAFKA_OPTS:
+        -Dzookeeper.4lw.commands.whitelist=*
+        -Djava.security.auth.login.config=/etc/kafka/secrets/zk_server_jaas.conf
       TZ: Asia/Taipei
+    volumes:
+      - ./secrets:/etc/kafka/secrets
     networks:
       - kafka_net
   kafka:
@@ -20,21 +25,27 @@ services:
     container_name: kafka
     depends_on:
       - zookeeper
-    volumes: 
-        - /var/run/docker.sock:/var/run/docker.sock
     restart: always
     ports:
       - 9092:9092
       - 9093:9093
     environment:
       KAFKA_BROKER_ID: 0
-      KAFKA_ZOOKEEPER_CONNECT: 20.205.103.48:2181,20.205.24.41:2181,20.187.126.100:2181
+      KAFKA_ZOOKEEPER_CONNECT: 34.80.165.184:2181
       ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://34.80.165.184:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SASL_ENABLED: "true"
       KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://20.205.24.41:9092"
-      KAFKA_SASL_ENABLED: "false"
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
       KAFKA_JMX_HOST: 20.205.24.41
       KAFKA_JMX_PORT: 9093
+      KAFKA_OPTS:
+        -Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf
+    volumes: 
+        - /var/run/docker.sock:/var/run/docker.sock
+        - ./secrets:/etc/kafka/secrets
       TZ: Asia/Taipei
     networks:
       - kafka_net

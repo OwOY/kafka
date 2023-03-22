@@ -27,6 +27,10 @@ services:
       EFAK_DB_PASSWORD: test
       EFAK_METRICS_CHARTS: "true"
       EFAK_CLUSTER_JMX_URI: service:jmx:rmi:///jndi/rmi://%s/kafka
+      EFAK_CLUSTER_KAFKA_EAGLE_SASL_ENABLE: "true"
+      EFAK_CLUSTER_KAFKA_EAGLE_SASL_PROTOCOL: "SASL_PLAINTEXT"
+      EFAK_CLUSTER_KAFKA_EAGLE_SASL_MECHANISM: "PLAIN"
+      EFAK_CLUSTER_KAFKA_EAGLE_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin";
       TZ: Asia/Taipei
     networks:
       - eagle
