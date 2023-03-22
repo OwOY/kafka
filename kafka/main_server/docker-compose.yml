@@ -18,10 +18,15 @@ services:
     ports:
       - 8048:8048
     environment:
+      EFAK_CLUSTER_KAFKA_EAGLE_BROKER_SIZE: 3
+      EFAK_CLUSTER_KAFKA_EAGLE_OFFSET_STORAGE: kafka
       EFAK_CLUSTER_ZK_LIST: 34.80.165.184:2181,104.155.197.126:2181,35.189.176.161:2181
-      EFAK_DB_DRIVER: com.mysql.jdbc.Driver
+      EFAK_DB_DRIVER: com.mysql.cj.jdbc.Driver
       EFAK_DB_URL: jdbc:mysql://db:3306/ke?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
+      ENV EFAK_DB_USERNAME: root
       EFAK_DB_PASSWORD: test
+      EFAK_METRICS_CHARTS: "true"
+      EFAK_CLUSTER_JMX_URI: service:jmx:rmi:///jndi/rmi://%s/kafka
       TZ: Asia/Taipei
     networks:
       - eagle
