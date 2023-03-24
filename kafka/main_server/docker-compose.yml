@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3'
 
 services:
   db:
@@ -7,34 +7,64 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: test
     restart: always
-    networks:
-      - eagle
-  eagle:
-    image: nickzurich/efak
-    container_name: eagle
-    restart: always
-    depends_on:
-      - db
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    container_name: zoo
     ports:
-      - 8048:8048
+      - "2181:2181"
     environment:
-      EFAK_CLUSTER_KAFKA_EAGLE_BROKER_SIZE: 3
-      EFAK_CLUSTER_KAFKA_EAGLE_OFFSET_STORAGE: kafka
-      EFAK_CLUSTER_ZK_LIST: 34.80.165.184:2181,104.155.197.126:2181,35.189.176.161:2181
-      EFAK_DB_DRIVER: com.mysql.cj.jdbc.Driver
-      EFAK_DB_URL: jdbc:mysql://db:3306/ke?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
-      ENV EFAK_DB_USERNAME: root
-      EFAK_DB_PASSWORD: test
-      EFAK_METRICS_CHARTS: "true"
-      EFAK_CLUSTER_JMX_URI: service:jmx:rmi:///jndi/rmi://%s/kafka
-      EFAK_CLUSTER_KAFKA_EAGLE_SASL_ENABLE: "true"
-      EFAK_CLUSTER_KAFKA_EAGLE_SASL_PROTOCOL: "SASL_PLAINTEXT"
-      EFAK_CLUSTER_KAFKA_EAGLE_SASL_MECHANISM: "PLAIN"
-      EFAK_CLUSTER_KAFKA_EAGLE_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin";
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_JMX_PORT: 39999
+      ZOOKEEPER_SASL_ENABLED: "true"
+      KAFKA_OPTS:
+        -Dzookeeper.4lw.commands.whitelist=*
+        -Djava.security.auth.login.config=/etc/kafka/secrets/zk_server_jaas.conf
       TZ: Asia/Taipei
-    networks:
-      - eagle
-
-networks:
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - 49999:49999
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: '20.205.24.15:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'SASL_PLAINTEXT://20.205.24.15:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 49999
+      KAFKA_SASL_ENABLED: "true"
+      KAFKA_SASL_MECHANISM: PLAIN
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_OPTS:
+        -Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf
+      TZ: Asia/Taipei
+    volumes:
+      - ./secrets:/etc/kafka/secrets
   eagle:
-    driver: bridge
+      image: nickzurich/efak
+      container_name: eagle
+      environment:
+        EFAK_CLUSTER_ZK_LIST: 20.205.24.15:2181
+        EFAK_DB_DRIVER: com.mysql.cj.jdbc.Driver
+        EFAK_DB_URL: jdbc:mysql://db:3306/ke?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
+        EFAK_DB_USERNAME: root
+        EFAK_DB_PASSWORD: test
+        EFAK_METRICS_CHARTS: "true"
+        EFAK_CLUSTER_KAFKA_EAGLE_SASL_ENABLE: "true"
+        EFAK_CLUSTER_KAFKA_EAGLE_SASL_PROTOCOL: "SASL_PLAINTEXT"
+        EFAK_CLUSTER_KAFKA_EAGLE_SASL_MECHANISM: "PLAIN"
+        EFAK_CLUSTER_KAFKA_EAGLE_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin";
+      depends_on:
+        - kafka
+        - db
+      ports:
+        - 8048:8048
+
