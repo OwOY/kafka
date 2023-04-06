@@ -1,56 +1,51 @@
-version: '3.8'
+version: '3'
 
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper
-    container_name: zookeeper
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: kafka
     ports:
-      - 2181:2181
+      - 9092:9092
+      - 49999:49999
     restart: always
     environment:
-      ALLOW_ANONYMOUS_LOGIN: "yes"
-      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 104.199.142.9:2181,35.229.251.246:2181,35.229.227.233:2181
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://35.229.251.246:9092
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_HOSTNAME: 35.229.251.246
+      KAFKA_JMX_PORT: 49999
+      KAFKA_SASL_ENABLED: "true"
+      KAFKA_SASL_MECHANISM: PLAIN
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_OPTS:
+        -Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf
+      TZ: Asia/Taipei
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    container_name: zoo
+    ports:
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
+    restart: always
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_SASL_ENABLED: "true"
+      ZOOKEEPER_SERVERS: 104.199.142.9:2888:3888;35.229.251.246:2888:3888;35.229.227.233:2888:3888
+      ZOOKEEPER_QUORUM_LISTEN_ON_ALL_IPS: "true"
+      KAFKA_JMX_PORT: 39999
       KAFKA_OPTS:
         -Dzookeeper.4lw.commands.whitelist=*
+        -Dzookeeper.audit.enable=true
         -Djava.security.auth.login.config=/etc/kafka/secrets/zk_server_jaas.conf
       TZ: Asia/Taipei
     volumes:
       - ./secrets:/etc/kafka/secrets
-    networks:
-      - kafka_net
-  kafka:
-    image: confluentinc/cp-kafka
-    container_name: kafka
-    depends_on:
-      - zookeeper
-    restart: always
-    ports:
-      - 9092:9092
-      - 9093:9093
-    environment:
-      KAFKA_BROKER_ID: 0
-      KAFKA_ZOOKEEPER_CONNECT: 34.80.165.184:2181
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://34.80.165.184:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
-      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
-      KAFKA_SASL_ENABLED: "true"
-      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
-      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
-      KAFKA_JMX_HOST: 20.205.24.41
-      KAFKA_JMX_PORT: 9093
-      KAFKA_OPTS:
-        -Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf
-    volumes: 
-        - /var/run/docker.sock:/var/run/docker.sock
-        - ./secrets:/etc/kafka/secrets
-      TZ: Asia/Taipei
-    networks:
-      - kafka_net
-
-
-networks:
-  kafka_net:
-    driver: bridge
